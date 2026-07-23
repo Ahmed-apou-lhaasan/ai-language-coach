@@ -1,5 +1,5 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { streamText } from "ai";
+import { generateText } from "ai";
 import { getScenario } from "@/lib/scenarios";
 
 const google = createGoogleGenerativeAI({
@@ -11,15 +11,18 @@ export async function POST(req: Request) {
   const scenario = getScenario(scenarioId);
 
   if (!scenario) {
-    return new Response("Scenario not found", { status: 404 });
+    return Response.json({ error: "Scenario not found" }, { status: 404 });
   }
 
-  const result = streamText({
-    model: google("gemini-2.5-flash"),
-    system: scenario.systemPrompt,
-    messages,
-    temperature: 0.7,
-  });
+  try {
+    const result = await generateText({
+      model: google("gemini-2.5-flash"),
+      system: scenario.systemPrompt,
+      messages,
+    });
 
-  return result.toDataStreamResponse();
+    return Response.json({ reply: result.text });
+  } catch (err: any) {
+    return Response.json({ error: err.message || "Unknown error" }, { status: 500 });
+  }
 }
