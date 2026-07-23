@@ -1,19 +1,20 @@
 "use client";
 
-import { useChat } from "ai/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { getScenario } from "@/lib/scenarios";
+
+type Message = { role: "user" | "assistant"; content: string };
 
 export default function PracticePage() {
   const params = useParams();
   const scenarioId = params.scenarioId as string;
   const scenario = getScenario(scenarioId);
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-    api: "/api/chat",
-    body: { scenarioId },
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   if (!scenario) {
     return (
@@ -21,6 +22,36 @@ export default function PracticePage() {
         <p className="text-gray-500">Scenario not found.</p>
       </div>
     );
+  }
+
+  async function sendMessage(e: React.FormEvent) {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const newMessages: Message[] = [...messages, { role: "user", content: input }];
+    setMessages(newMessages);
+    setInput("");
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: newMessages, scenarioId }),
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setMessages([...newMessages, { role: "assistant", content: data.reply }]);
+      }
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -39,8 +70,8 @@ export default function PracticePage() {
             Say hello to start the conversation!
           </p>
         )}
-        {messages.map((m) => (
-          <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+        {messages.map((m, i) => (
+          <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
             <div
               className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                 m.role === "user"
@@ -53,12 +84,13 @@ export default function PracticePage() {
           </div>
         ))}
         {isLoading && <p className="text-sm text-gray-400">Typing...</p>}
+        {error && <p className="text-sm text-red-500">Error: {error}</p>}
       </div>
 
-      <form onSubmit={handleSubmit} className="p-3 bg-white border-t flex gap-2">
+      <form onSubmit={sendMessage} className="p-3 bg-white border-t flex gap-2">
         <input
           value={input}
-          onChange={handleInputChange}
+          onChange={(e) => setInput(e.target.value)}
           placeholder="Type your response..."
           className="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
