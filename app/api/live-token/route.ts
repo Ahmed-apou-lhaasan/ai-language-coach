@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Modality } from "@google/genai";
 
 export async function POST() {
   try {
@@ -18,7 +18,7 @@ export async function POST() {
         liveConnectConstraints: {
           model: "gemini-2.5-flash-native-audio-preview-12-2025",
           config: {
-            responseModalities: ["AUDIO"],
+            responseModalities: [Modality.AUDIO],
           },
         },
         httpOptions: { apiVersion: "v1alpha" },
