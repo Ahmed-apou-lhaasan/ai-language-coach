@@ -12,7 +12,7 @@ const VOICES = ["Puck", "Charon", "Kore", "Fenrir", "Aoede"];
 export default function PracticePage() {
   const params = useParams();
   const scenarioId = params.scenarioId as string;
-  const scenario = getScenario(scenarioId);
+  const scenario = getScenario(scenarioId)!;
 
   const [callStatus, setCallStatus] = useState("idle");
   const [transcripts, setTranscripts] = useState<Transcript[]>([]);
