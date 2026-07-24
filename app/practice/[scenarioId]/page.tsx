@@ -15,6 +15,7 @@ export default function PracticePage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [testResult, setTestResult] = useState("");
 
   if (!scenario) {
     return (
@@ -22,6 +23,21 @@ export default function PracticePage() {
         <p className="text-gray-500">Scenario not found.</p>
       </div>
     );
+  }
+
+  async function testLiveToken() {
+    setTestResult("Testing...");
+    try {
+      const res = await fetch("/api/live-token", { method: "POST" });
+      const data = await res.json();
+      if (data.error) {
+        setTestResult("Error: " + data.error);
+      } else {
+        setTestResult("Success! Token received: " + data.token.slice(0, 30) + "...");
+      }
+    } catch (err) {
+      setTestResult("Network error");
+    }
   }
 
   async function sendMessage(e: React.FormEvent) {
@@ -63,6 +79,16 @@ export default function PracticePage() {
           <p className="text-sm text-gray-500">{scenario.cefrTarget}</p>
         </div>
       </header>
+
+      <div className="px-4 py-2 bg-yellow-50 border-b">
+        <button
+          onClick={testLiveToken}
+          className="text-xs bg-yellow-500 text-white px-3 py-1 rounded-full"
+        >
+          Test Live Token (temp)
+        </button>
+        {testResult && <p className="text-xs mt-1 text-gray-700">{testResult}</p>}
+      </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {messages.length === 0 && (
