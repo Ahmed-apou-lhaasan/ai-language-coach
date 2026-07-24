@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { GoogleGenAI, Modality } from "@google/genai";
 import { useParams } from "next/navigation";
 import { getScenario } from "@/lib/scenarios";
 
@@ -15,8 +16,8 @@ export default function PracticePage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [testResult, setTestResult] = useState("");
-
+  const [callStatus, setCallStatus] = useState("idle");
+  const sessionRef = useRef<any>(null);
   if (!scenario) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -25,21 +26,34 @@ export default function PracticePage() {
     );
   }
 
-  async function testLiveToken() {
-    setTestResult("Testing...");
+  async function startCall() {
+    setCallStatus("connecting");
     try {
       const res = await fetch("/api/live-token", { method: "POST" });
       const data = await res.json();
       if (data.error) {
-        setTestResult("Error: " + data.error);
-      } else {
-        setTestResult("Success! Token received: " + data.token.slice(0, 30) + "...");
+        setCallStatus("error: " + data.error);
+        return;
       }
-    } catch (err) {
-      setTestResult("Network error");
+
+      const ai = new GoogleGenAI({ apiKey: data.token, httpOptions: { apiVersion: "v1alpha" } });
+
+      const session = await ai.live.connect({
+        model: "gemini-2.5-flash-native-audio-preview-12-2025",
+        config: { responseModalities: [Modality.AUDIO] },
+        callbacks: {
+          onopen: () => setCallStatus("connected"),
+          onclose: () => setCallStatus("closed"),
+          onerror: (e: any) => setCallStatus("error: " + (e.message || "connection error")),
+          onmessage: () => {},
+        },
+      });
+
+      sessionRef.current = session;
+    } catch (err: any) {
+      setCallStatus("error: " + (err.message || "unknown"));
     }
   }
-
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -82,12 +96,12 @@ export default function PracticePage() {
 
       <div className="px-4 py-2 bg-yellow-50 border-b">
         <button
-          onClick={testLiveToken}
-          className="text-xs bg-yellow-500 text-white px-3 py-1 rounded-full"
+          onClick={startCall}
+          className="text-xs bg-green-600 text-white px-3 py-1 rounded-full"
         >
-          Test Live Token (temp)
+          Start Call (test)
         </button>
-        {testResult && <p className="text-xs mt-1 text-gray-700">{testResult}</p>}
+        <p className="text-xs mt-1 text-gray-700">Status: {callStatus}</p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
