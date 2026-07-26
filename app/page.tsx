@@ -1,3 +1,7 @@
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
 const scenarios = [
   {
     id: "job-interview",
@@ -19,13 +23,36 @@ const scenarios = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll() {},
+      },
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="max-w-md mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">
-          AI Language Coach
-        </h1>
+        <div className="flex justify-between items-start mb-1">
+          <h1 className="text-2xl font-bold text-gray-900">
+            AI Language Coach
+          </h1>
+          <a href="/logout" className="text-xs text-gray-400">Sign out</a>
+        </div>
         <p className="text-gray-500 mb-6">Choose a scenario to practice</p>
 
         <div className="space-y-3">
