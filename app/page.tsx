@@ -63,9 +63,22 @@ export default async function Home() {
           </h1>
           <a href="/logout" className="text-xs text-gray-400">Sign out</a>
         </div>
-        <p className="text-gray-500 mb-6">
-          Learning {profile.target_language} · Choose a scenario to practice
+        <p className="text-gray-500 mb-4">
+          Learning {profile.target_language}
         </p>
+
+        <a
+          href="/vocabulary"
+          className="block bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-6 flex items-center justify-between"
+        >
+          <div>
+            <p className="font-semibold text-blue-900">My Vocabulary</p>
+            <p className="text-sm text-blue-600">Review your saved words</p>
+          </div>
+          <span className="text-blue-400">→</span>
+        </a>
+
+        <p className="text-gray-500 mb-3 text-sm font-medium">Choose a scenario to practice</p>
 
         <div className="space-y-3">
           {scenarios.map((s) => (
