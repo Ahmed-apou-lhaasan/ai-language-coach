@@ -65,52 +65,66 @@ export default function VocabularyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white px-5 py-8">
       <div className="max-w-md mx-auto">
-        <div className="flex items-center gap-3 mb-1">
-          <a href="/" className="text-gray-400 text-sm">← Back</a>
+        <a href="/" className="text-gray-400 text-sm">← Back</a>
+        <div className="flex items-center gap-3 mt-2 mb-1 animate-fade-up">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-lg shadow-md">
+            📚
+          </div>
+          <h1 className="text-2xl font-extrabold text-gray-900">My Vocabulary</h1>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">My Vocabulary</h1>
-        <p className="text-gray-500 mb-6">Words you're learning</p>
+        <p className="text-gray-400 mb-6 text-sm">Words you're learning</p>
 
-        <form onSubmit={addWord} className="bg-white border rounded-2xl p-4 mb-6 space-y-2">
+        <form
+          onSubmit={addWord}
+          className="bg-white rounded-3xl p-4 mb-6 space-y-2 shadow-sm border border-gray-100 animate-fade-up"
+          style={{ animationDelay: "0.1s" }}
+        >
           <input
             value={newWord}
             onChange={(e) => setNewWord(e.target.value)}
             placeholder="Word"
-            className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <input
             value={newTranslation}
             onChange={(e) => setNewTranslation(e.target.value)}
             placeholder="Translation (optional)"
-            className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white rounded-xl py-2 text-sm font-medium"
+            className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl py-2.5 text-sm font-semibold shadow-md shadow-blue-500/20"
           >
-            Add Word
+            + Add Word
           </button>
         </form>
 
         {loading ? (
           <p className="text-center text-gray-400 text-sm">Loading...</p>
         ) : words.length === 0 ? (
-          <p className="text-center text-gray-400 text-sm">No words saved yet.</p>
+          <div className="text-center py-10 animate-fade-up">
+            <div className="text-4xl mb-2">📝</div>
+            <p className="text-gray-400 text-sm">No words saved yet.</p>
+          </div>
         ) : (
           <div className="space-y-2">
-            {words.map((w) => (
-              <div key={w.id} className="bg-white border rounded-2xl p-4 flex justify-between items-start">
+            {words.map((w, i) => (
+              <div
+                key={w.id}
+                className="bg-white rounded-2xl p-4 flex justify-between items-center shadow-sm border border-gray-100 animate-fade-up"
+                style={{ animationDelay: `${0.05 * i}s` }}
+              >
                 <div>
-                  <p className="font-semibold text-gray-900">{w.word}</p>
+                  <p className="font-bold text-gray-900">{w.word}</p>
                   {w.translation && (
-                    <p className="text-sm text-gray-500">{w.translation}</p>
+                    <p className="text-sm text-gray-400">{w.translation}</p>
                   )}
                 </div>
                 <button
                   onClick={() => deleteWord(w.id)}
-                  className="text-xs text-red-400"
+                  className="text-xs text-red-400 bg-red-50 rounded-full px-3 py-1.5"
                 >
                   Delete
                 </button>
