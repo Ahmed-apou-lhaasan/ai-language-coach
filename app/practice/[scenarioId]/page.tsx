@@ -206,4 +206,134 @@ export default function PracticePage() {
       processor.onaudioprocess = (e) => {
         const input = e.inputBuffer.getChannelData(0);
         const downsampled = downsampleTo16k(input, audioCtx.sampleRate);
-        const pcm16 = floa
+        const pcm16 = floatTo16BitPCM(downsampled);
+        const base64Audio = toBase64(new Uint8Array(pcm16.buffer));
+        sessionRef.current?.sendRealtimeInput({
+          audio: { data: base64Audio, mimeType: "audio/pcm;rate=16000" },
+        });
+      };
+
+      source.connect(processor);
+      processor.connect(audioCtx.destination);
+    } catch (err: any) {
+      setCallStatus("error: " + (err.message || "unknown"));
+    }
+  }
+
+  function endCall() {
+    processorRef.current?.disconnect();
+    audioCtxInRef.current?.close();
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    sessionRef.current?.close();
+    setCallStatus("idle");
+    setIsSpeaking(false);
+  }
+
+  const isConnected = callStatus === "connected";
+  const isConnecting = callStatus === "connecting";
+  const orbState = isSpeaking ? "orb-speaking" : isConnecting ? "orb-connecting" : "orb-idle";
+
+  return (
+    <div className="flex flex-col h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-gray-950 text-white overflow-hidden">
+      <header className="px-4 py-3 flex items-center gap-3 z-10">
+        <a href="/" className="text-white/50 text-sm">← Back</a>
+        <div>
+          <h1 className="font-bold text-lg">{scenario.title}</h1>
+          <p className="text-xs text-white/40">{scenario.cefrTarget} · {effectiveLanguage}</p>
+        </div>
+      </header>
+
+      <div className="px-4 flex items-center gap-2 flex-wrap z-10">
+        <select
+          value={voice}
+          onChange={(e) => setVoice(e.target.value)}
+          disabled={isConnected || isConnecting}
+          className="text-xs bg-white/10 border border-white/10 rounded-full px-3 py-1 text-white"
+        >
+          {VOICES.map((v) => (
+            <option key={v} value={v} className="text-black">{v}</option>
+          ))}
+        </select>
+        <button
+          onClick={() => setShowTranscript((s) => !s)}
+          className="text-xs bg-white/10 border border-white/10 rounded-full px-3 py-1"
+        >
+          {showTranscript ? "Hide transcript" : "Show transcript"}
+        </button>
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center relative">
+        <div className="relative flex items-center justify-center">
+          {isConnected && (
+            <>
+              <span className="absolute w-40 h-40 rounded-full border border-purple-400/40 ripple-ring" />
+              <span className="absolute w-40 h-40 rounded-full border border-indigo-400/40 ripple-ring" style={{ animationDelay: "0.5s" }} />
+            </>
+          )}
+          <div
+            className={`w-40 h-40 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center ${orbState}`}
+          >
+            {isSpeaking ? (
+              <div className="flex items-end gap-1.5 h-8">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <span
+                    key={i}
+                    className="w-1.5 bg-white rounded-full wave-bar"
+                    style={{ animationDelay: `${i * 0.12}s` }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <span className="text-5xl">
+                {isConnecting ? "🔄" : isConnected ? "🎙️" : "👋"}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <p className="mt-8 text-white/60 text-sm">
+          {isConnecting && "Connecting..."}
+          {isConnected && isSpeaking && "Speaking..."}
+          {isConnected && !isSpeaking && "Listening..."}
+          {callStatus === "idle" && "Tap below to start"}
+          {callStatus.startsWith("error") && (
+            <span className="text-red-400">{callStatus}</span>
+          )}
+        </p>
+
+        {showTranscript && (
+          <div className="absolute bottom-28 left-4 right-4 max-h-40 overflow-y-auto bg-black/30 backdrop-blur rounded-2xl p-3 text-xs space-y-1.5">
+            {transcripts.length === 0 && (
+              <p className="text-white/30 text-center">No transcript yet</p>
+            )}
+            {transcripts.map((t, i) => (
+              <p key={i} className={t.role === "user" ? "text-blue-300" : "text-purple-200"}>
+                <span className="opacity-50">{t.role === "user" ? "You: " : "AI: "}</span>
+                {t.content}
+              </p>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="pb-10 flex justify-center z-10">
+        {isConnected ? (
+          <button
+            onClick={endCall}
+            className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center text-2xl shadow-lg shadow-red-500/30"
+          >
+            ⏹
+          </button>
+        ) : (
+          <button
+            onClick={startCall}
+            disabled={isConnecting}
+            className="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-2xl shadow-lg shadow-green-500/30 disabled:opacity-50"
+          >
+            📞
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
