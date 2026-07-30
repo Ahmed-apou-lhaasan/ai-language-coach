@@ -44,6 +44,16 @@ export default async function Home() {
     redirect("/login");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("target_language")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || !profile.target_language) {
+    redirect("/onboarding");
+  }
+
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="max-w-md mx-auto">
@@ -53,7 +63,9 @@ export default async function Home() {
           </h1>
           <a href="/logout" className="text-xs text-gray-400">Sign out</a>
         </div>
-        <p className="text-gray-500 mb-6">Choose a scenario to practice</p>
+        <p className="text-gray-500 mb-6">
+          Learning {profile.target_language} · Choose a scenario to practice
+        </p>
 
         <div className="space-y-3">
           {scenarios.map((s) => (
