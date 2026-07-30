@@ -67,16 +67,22 @@ export default async function Home() {
           Learning {profile.target_language}
         </p>
 
-        <a
-          href="/vocabulary"
-          className="block bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-6 flex items-center justify-between"
-        >
-          <div>
-            <p className="font-semibold text-blue-900">My Vocabulary</p>
-            <p className="text-sm text-blue-600">Review your saved words</p>
-          </div>
-          <span className="text-blue-400">→</span>
-        </a>
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <a
+            href="/vocabulary"
+            className="bg-blue-50 border border-blue-100 rounded-2xl p-4"
+          >
+            <p className="font-semibold text-blue-900 text-sm">My Vocabulary</p>
+            <p className="text-xs text-blue-600 mt-1">Saved words</p>
+          </a>
+          <a
+            href="/stories"
+            className="bg-purple-50 border border-purple-100 rounded-2xl p-4"
+          >
+            <p className="font-semibold text-purple-900 text-sm">Stories</p>
+            <p className="text-xs text-purple-600 mt-1">Read & learn</p>
+          </a>
+        </div>
 
         <p className="text-gray-500 mb-3 text-sm font-medium">Choose a scenario to practice</p>
 
