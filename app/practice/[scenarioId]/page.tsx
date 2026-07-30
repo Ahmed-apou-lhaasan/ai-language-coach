@@ -16,9 +16,11 @@ export default function PracticePage() {
   const scenario = getScenario(scenarioId)!;
 
   const [callStatus, setCallStatus] = useState("idle");
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcripts, setTranscripts] = useState<Transcript[]>([]);
   const [voice, setVoice] = useState("Puck");
   const [language, setLanguage] = useState("english");
+  const [showTranscript, setShowTranscript] = useState(false);
 
   const sessionRef = useRef<any>(null);
   const audioCtxInRef = useRef<AudioContext | null>(null);
@@ -28,6 +30,7 @@ export default function PracticePage() {
   const playTimeRef = useRef(0);
   const currentUserLineRef = useRef("");
   const currentAiLineRef = useRef("");
+  const speakingTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
     async function loadLanguage() {
@@ -80,7 +83,14 @@ export default function PracticePage() {
     return result;
   }
 
+  function markSpeaking() {
+    setIsSpeaking(true);
+    if (speakingTimeoutRef.current) clearTimeout(speakingTimeoutRef.current);
+    speakingTimeoutRef.current = setTimeout(() => setIsSpeaking(false), 700);
+  }
+
   async function playAudioChunk(base64Data: string) {
+    markSpeaking();
     if (!audioCtxOutRef.current) {
       audioCtxOutRef.current = new AudioContext({ sampleRate: 24000 });
       playTimeRef.current = audioCtxOutRef.current.currentTime;
@@ -177,6 +187,7 @@ export default function PracticePage() {
 
             if (sc.interrupted) {
               playTimeRef.current = audioCtxOutRef.current?.currentTime || 0;
+              setIsSpeaking(false);
             }
           },
         },
@@ -195,82 +206,4 @@ export default function PracticePage() {
       processor.onaudioprocess = (e) => {
         const input = e.inputBuffer.getChannelData(0);
         const downsampled = downsampleTo16k(input, audioCtx.sampleRate);
-        const pcm16 = floatTo16BitPCM(downsampled);
-        const base64Audio = toBase64(new Uint8Array(pcm16.buffer));
-        sessionRef.current?.sendRealtimeInput({
-          audio: { data: base64Audio, mimeType: "audio/pcm;rate=16000" },
-        });
-      };
-
-      source.connect(processor);
-      processor.connect(audioCtx.destination);
-    } catch (err: any) {
-      setCallStatus("error: " + (err.message || "unknown"));
-    }
-  }
-
-  function endCall() {
-    processorRef.current?.disconnect();
-    audioCtxInRef.current?.close();
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    sessionRef.current?.close();
-    setCallStatus("idle");
-  }
-
-  return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      <header className="px-4 py-3 bg-white border-b sticky top-0 z-10 flex items-center gap-3">
-        <a href="/" className="text-gray-400 text-sm">← Back</a>
-        <div>
-          <h1 className="font-semibold text-lg">{scenario.title}</h1>
-          <p className="text-sm text-gray-500">{scenario.cefrTarget} · {effectiveLanguage}</p>
-        </div>
-      </header>
-
-      <div className="px-4 py-3 bg-white border-b flex items-center gap-2 flex-wrap">
-        <select
-          value={voice}
-          onChange={(e) => setVoice(e.target.value)}
-          disabled={callStatus === "connected" || callStatus === "connecting"}
-          className="text-xs border rounded-full px-2 py-1"
-        >
-          {VOICES.map((v) => (
-            <option key={v} value={v}>{v}</option>
-          ))}
-        </select>
-
-        {callStatus === "connected" ? (
-          <button onClick={endCall} className="text-xs bg-red-600 text-white px-4 py-1.5 rounded-full">
-            End Call
-          </button>
-        ) : (
-          <button onClick={startCall} className="text-xs bg-green-600 text-white px-4 py-1.5 rounded-full">
-            Start Call
-          </button>
-        )}
-        <span className="text-xs text-gray-500">{callStatus}</span>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {transcripts.length === 0 && (
-          <p className="text-center text-gray-400 text-sm mt-8">
-            Tap "Start Call" and speak to begin.
-          </p>
-        )}
-        {transcripts.map((t, i) => (
-          <div key={i} className={t.role === "user" ? "flex justify-end" : "flex justify-start"}>
-            <div
-              className={`max-w-[80%] rounded-2xl px-4 py-2 ${
-                t.role === "user"
-                  ? "bg-blue-600 text-white rounded-br-sm"
-                  : "bg-white border rounded-bl-sm"
-              }`}
-            >
-              {t.content}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+        const pcm16 = floa
