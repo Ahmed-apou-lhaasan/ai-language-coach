@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 const LANGUAGES = [
-  { id: "english", label: "English" },
-  { id: "spanish", label: "Español" },
-  { id: "german", label: "Deutsch" },
-  { id: "dutch", label: "Nederlands" },
+  { id: "english", label: "English", emoji: "🇬🇧", color: "from-blue-500 to-indigo-600" },
+  { id: "spanish", label: "Español", emoji: "🇪🇸", color: "from-orange-400 to-red-500" },
+  { id: "german", label: "Deutsch", emoji: "🇩🇪", color: "from-gray-600 to-gray-800" },
+  { id: "dutch", label: "Nederlands", emoji: "🇳🇱", color: "from-orange-400 to-pink-500" },
 ];
 
 export default function OnboardingPage() {
@@ -49,40 +49,49 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-sm w-full">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1 text-center">
-          Welcome!
-        </h1>
-        <p className="text-gray-500 mb-6 text-center">
-          Let's set up your learning journey
-        </p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-950 via-purple-950 to-gray-950 px-4 py-8 relative overflow-hidden">
+      <div className="absolute w-64 h-64 bg-purple-500/20 rounded-full blur-3xl top-0 -right-10 animate-float" />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="max-w-sm w-full relative z-10 animate-fade-up">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">
+            Welcome! 👋
+          </h1>
+          <p className="text-white/40 mt-2 text-sm">
+            Let's set up your learning journey
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-2">
+            <label className="text-sm font-semibold text-white/70 block mb-3">
               Which language do you want to learn?
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {LANGUAGES.map((l) => (
                 <button
                   key={l.id}
                   type="button"
                   onClick={() => setLanguage(l.id)}
-                  className={`border rounded-xl py-2.5 text-sm font-medium transition ${
+                  className={`card-hover rounded-2xl p-4 text-left transition border ${
                     language === l.id
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-700 border-gray-200"
+                      ? "border-white/30 bg-white/15"
+                      : "border-white/10 bg-white/5"
                   }`}
                 >
-                  {l.label}
+                  <div
+                    className={`w-9 h-9 rounded-xl bg-gradient-to-br ${l.color} flex items-center justify-center text-lg mb-2`}
+                  >
+                    {l.emoji}
+                  </div>
+                  <p className="text-sm font-semibold text-white">{l.label}</p>
                 </button>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-2">
+            <label className="text-sm font-semibold text-white/70 block mb-2">
               Why do you want to learn it? (optional)
             </label>
             <textarea
@@ -90,20 +99,20 @@ export default function OnboardingPage() {
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. for work, travel, exams..."
               rows={3}
-              className="w-full border rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-white/10 backdrop-blur border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-purple-400"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white rounded-2xl py-3 text-sm font-medium disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-2xl py-3.5 text-sm font-semibold shadow-lg shadow-purple-500/30 disabled:opacity-50"
           >
-            {loading ? "Saving..." : "Start Learning"}
+            {loading ? "Saving..." : "Start Learning →"}
           </button>
 
           {error && (
-            <p className="text-sm text-red-500 text-center">{error}</p>
+            <p className="text-sm text-red-400 text-center">{error}</p>
           )}
         </form>
       </div>
