@@ -7,17 +7,19 @@ const google = createGoogleGenerativeAI({
 });
 
 export async function POST(req: Request) {
-  const { messages, scenarioId } = await req.json();
+  const { messages, scenarioId, language } = await req.json();
   const scenario = getScenario(scenarioId);
 
   if (!scenario) {
     return Response.json({ error: "Scenario not found" }, { status: 404 });
   }
 
+  const targetLanguage = scenario.englishOnly ? "English" : (language || "English");
+
   try {
     const result = await generateText({
       model: google("gemini-flash-latest"),
-      system: scenario.systemPrompt,
+      system: scenario.buildPrompt(targetLanguage),
       messages,
     });
 
