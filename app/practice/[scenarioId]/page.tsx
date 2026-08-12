@@ -7,6 +7,13 @@ import { getScenario } from "@/lib/scenarios";
 import { createClient } from "@/lib/supabase/client";
 
 type Transcript = { role: "user" | "assistant"; content: string };
+type ScoreResult = {
+  level: string;
+  overallScore: number;
+  strengths: string[];
+  improvements: string[];
+  summary: string;
+};
 
 const VOICES = ["Puck", "Charon", "Kore", "Fenrir", "Aoede"];
 
@@ -21,6 +28,9 @@ export default function PracticePage() {
   const [voice, setVoice] = useState("Puck");
   const [language, setLanguage] = useState("english");
   const [showTranscript, setShowTranscript] = useState(false);
+  const [score, setScore] = useState<ScoreResult | null>(null);
+  const [scoring, setScoring] = useState(false);
+  const [scoreError, setScoreError] = useState("");
 
   const sessionRef = useRef<any>(null);
   const audioCtxInRef = useRef<AudioContext | null>(null);
@@ -118,6 +128,7 @@ export default function PracticePage() {
   async function startCall() {
     setCallStatus("connecting");
     setTranscripts([]);
+    setScore(null);
     try {
       const res = await fetch("/api/live-token", { method: "POST" });
       const data = await res.json();
@@ -229,18 +240,123 @@ export default function PracticePage() {
     setIsSpeaking(false);
   }
 
+  async function getFeedback() {
+    if (transcripts.length === 0) return;
+    setScoring(true);
+    setScoreError("");
+
+    try {
+      const res = await fetch("/api/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transcript: transcripts,
+          language: effectiveLanguage,
+          scenarioTitle: scenario.title,
+          cefrTarget: scenario.cefrTarget,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setScoreError(data.error);
+      } else {
+        setScore(data);
+
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("sessions").insert({
+            user_id: user.id,
+            scenario_id: scenarioId,
+            language: effectiveLanguage,
+            transcript: transcripts,
+          });
+        }
+      }
+    } catch (err) {
+      setScoreError("Network error. Please try again.");
+    } finally {
+      setScoring(false);
+    }
+  }
+
   const isConnected = callStatus === "connected";
   const isConnecting = callStatus === "connecting";
   const orbState = isSpeaking ? "orb-speaking" : isConnecting ? "orb-connecting" : "orb-idle";
 
+  if (score) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white px-5 py-8">
+        <div className="max-w-md mx-auto animate-fade-up">
+          <a href="/" className="text-gray-400 text-sm">← Back to Home</a>
+
+          <div className="text-center mt-6 mb-8">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/30">
+              <span className="text-3xl font-extrabold text-white">{score.overallScore}</span>
+            </div>
+            <h1 className="text-2xl font-extrabold text-gray-900">{score.level}</h1>
+            <p className="text-gray-400 text-sm mt-1">{scenario.title}</p>
+          </div>
+
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mb-4">
+            <p className="text-gray-700 text-sm leading-relaxed">{score.summary}</p>
+          </div>
+
+          <div className="bg-emerald-50 rounded-3xl p-5 border border-emerald-100 mb-4">
+            <p className="text-sm font-bold text-emerald-700 mb-2 uppercase tracking-wide">
+              💪 Strengths
+            </p>
+            <ul className="space-y-1.5">
+              {score.strengths.map((s, i) => (
+                <li key={i} className="text-sm text-emerald-800">• {s}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="bg-amber-50 rounded-3xl p-5 border border-amber-100 mb-6">
+            <p className="text-sm font-bold text-amber-700 mb-2 uppercase tracking-wide">
+              🎯 To Improve
+            </p>
+            <ul className="space-y-1.5">
+              {score.improvements.map((s, i) => (
+                <li key={i} className="text-sm text-amber-800">• {s}</li>
+              ))}
+            </ul>
+          </div>
+
+          <button
+            onClick={() => {
+              setScore(null);
+              setTranscripts([]);
+            }}
+            className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-2xl py-3.5 text-sm font-semibold shadow-lg shadow-purple-500/20"
+          >
+            Practice Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-gray-950 text-white overflow-hidden">
-      <header className="px-4 py-3 flex items-center gap-3 z-10">
-        <a href="/" className="text-white/50 text-sm">← Back</a>
-        <div>
-          <h1 className="font-bold text-lg">{scenario.title}</h1>
-          <p className="text-xs text-white/40">{scenario.cefrTarget} · {effectiveLanguage}</p>
+      <header className="px-4 py-3 flex items-center justify-between gap-3 z-10">
+        <div className="flex items-center gap-3">
+          <a href="/" className="text-white/50 text-sm">← Back</a>
+          <div>
+            <h1 className="font-bold text-lg">{scenario.title}</h1>
+            <p className="text-xs text-white/40">{scenario.cefrTarget} · {effectiveLanguage}</p>
+          </div>
         </div>
+        {transcripts.length > 0 && !isConnected && (
+          <button
+            onClick={getFeedback}
+            disabled={scoring}
+            className="text-xs bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full px-3 py-1.5 font-semibold disabled:opacity-50"
+          >
+            {scoring ? "Analyzing..." : "Get Feedback"}
+          </button>
+        )}
       </header>
 
       <div className="px-4 flex items-center gap-2 flex-wrap z-10">
@@ -295,11 +411,16 @@ export default function PracticePage() {
           {isConnecting && "Connecting..."}
           {isConnected && isSpeaking && "Speaking..."}
           {isConnected && !isSpeaking && "Listening..."}
-          {callStatus === "idle" && "Tap below to start"}
+          {callStatus === "idle" && transcripts.length === 0 && "Tap below to start"}
+          {callStatus === "idle" && transcripts.length > 0 && "Tap \"Get Feedback\" above, or start a new call"}
           {callStatus.startsWith("error") && (
             <span className="text-red-400">{callStatus}</span>
           )}
         </p>
+
+        {scoreError && (
+          <p className="mt-2 text-sm text-red-400">{scoreError}</p>
+        )}
 
         {showTranscript && (
           <div className="absolute bottom-28 left-4 right-4 max-h-40 overflow-y-auto bg-black/30 backdrop-blur rounded-2xl p-3 text-xs space-y-1.5">
