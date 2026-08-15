@@ -9,6 +9,7 @@ const LANGUAGES = [
   { id: "spanish", label: "Español", emoji: "🇪🇸", color: "from-orange-400 to-red-500" },
   { id: "german", label: "Deutsch", emoji: "🇩🇪", color: "from-gray-600 to-gray-800" },
   { id: "dutch", label: "Nederlands", emoji: "🇳🇱", color: "from-orange-400 to-pink-500" },
+  { id: "turkish", label: "Türkçe", emoji: "🇹🇷", color: "from-red-500 to-red-700" },
 ];
 
 export default function OnboardingPage() {
