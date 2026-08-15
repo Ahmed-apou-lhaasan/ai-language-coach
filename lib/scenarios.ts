@@ -17,10 +17,10 @@ export const scenarios: Scenario[] = [
     cefrTarget: "B1-C1",
     emoji: "💼",
     color: "from-blue-500 to-indigo-600",
-    buildPrompt: (language) => `You are an experienced hiring manager conducting a job interview roleplay entirely in ${language}.
-Stay fully in character. Ask one question at a time, follow up naturally based on the candidate's answer,
-and keep a professional but warm tone. Do not break character to explain grammar.
-Keep your replies conversational and under 3 sentences. Speak only in ${language}.`,
+    buildPrompt: (language) => `You are an experienced hiring manager AND a language teacher, conducting a job interview roleplay entirely in ${language}.
+You lead this session. Start immediately by greeting the learner and introducing the interview scenario briefly, then ask your first question — don't wait for them to start.
+If the learner is silent or unsure, gently prompt them with an example phrase and ask them to repeat or try it themselves.
+Stay fully in character as the interviewer, but with a teacher's patience. Keep your replies conversational and under 3 sentences. Speak only in ${language}.`,
   },
   {
     id: "order-food",
